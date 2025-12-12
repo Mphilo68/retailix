@@ -1,44 +1,40 @@
 import 'package:flutter/material.dart';
-import '../config/constants.dart'; // Import constants for colors
+import '../config/constants.dart';
+import '../utils/auth_service.dart'; // Import the new service
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
-  // Helper to determine the leading icon based on title (to use specific icons)
-  IconData _getLeadingIcon(String title) {
-    switch (title) {
-      case 'Change Password': return Icons.lock_outline;
-      case 'Shipping Addresses': return Icons.location_on_outlined;
-      case 'Notification Settings': return Icons.notifications_none;
-      case 'Payment Methods': return Icons.credit_card_outlined;
-      case 'Sign Out': return Icons.logout;
-      default: return Icons.settings_applications;
+  // Handles the sign-out process and navigates back to the login screen
+  void _handleSignOut(BuildContext context) async {
+    // 1. Call the simulated sign out service
+    await AuthService().signOut();
+
+    // 2. Navigate back to the login screen, replacing all previous routes
+    if (context.mounted) {
+      // pushNamedAndRemoveUntil clears the entire navigation stack, preventing back navigation to home
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You have been signed out.'))
+      );
     }
   }
 
-  // Refactored Profile Tile to use specific icons
-  Widget _buildProfileTileRefactored({
+  Widget _buildProfileTile({
+    required IconData icon,
     required String title,
-    required VoidCallback onTap,
-    Color color = Colors.black87,
+    String? subtitle,
+    VoidCallback? onTap,
+    Color color = Colors.black,
   }) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-        leading: Icon(_getLeadingIcon(title), color: retailPrimary),
-        title: Text(
-          title,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: color),
-        ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-        onTap: onTap,
-      ),
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(title, style: TextStyle(color: color, fontWeight: FontWeight.w500)),
+      subtitle: subtitle != null ? Text(subtitle) : null,
+      trailing: onTap != null ? const Icon(Icons.arrow_forward_ios, size: 16) : null,
+      onTap: onTap,
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -50,115 +46,121 @@ class ProfileScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: <Widget>[
-            // Profile Header Area
+            // User Header
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    spreadRadius: 1,
-                    blurRadius: 5,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  // Avatar
-                  const CircleAvatar(
-                    radius: 40,
-                    backgroundColor: retailSecondary,
-                    child: Icon(Icons.account_circle, size: 60, color: Colors.white),
-                  ),
-                  const SizedBox(height: 12),
-                  // User Name
-                  const Text(
-                    'Alex Retailer',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              color: Colors.white,
+              child: const Center(
+                child: Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundColor: retailSecondary,
+                      child: Icon(Icons.person, size: 60, color: Colors.white),
                     ),
-                  ),
-                  // User Email
-                  const Text(
-                    'alex.retailer@retailix.com',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Edit Profile Button
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      // Action: Open Edit Profile Form
-                    },
-                    icon: const Icon(Icons.edit, size: 18),
-                    label: const Text('Edit Profile'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: retailPrimary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                    SizedBox(height: 10),
+                    Text(
+                      'Jane Shopper',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Account Actions Section
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Padding(
-                padding: const EdgeInsets.only(left: 20, bottom: 8),
-                child: Text(
-                  'Account & Preferences',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade700,
-                  ),
+                    Text(
+                      'jane.shopper@retailix.com',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
+            
+            const Divider(height: 1, thickness: 1),
 
-            // Profile Buttons/Tiles
-            _buildProfileTileRefactored(
+            // Account Settings
+            _buildSectionHeader('Account Settings'),
+            _buildProfileTile(
+              icon: Icons.edit_outlined,
+              title: 'Edit Personal Information',
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Editing Info...'))
+                );
+              },
+            ),
+            _buildProfileTile(
+              icon: Icons.lock_outline,
               title: 'Change Password',
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Changing Password...'))
+                );
+              },
+            ),
+            
+            const Divider(height: 1, thickness: 1),
+
+            // Preferences
+            _buildSectionHeader('Preferences'),
+            _buildProfileTile(
+              icon: Icons.location_on_outlined,
+              title: 'My Locations',
+              subtitle: '2 saved addresses',
               onTap: () {},
             ),
-            _buildProfileTileRefactored(
-              title: 'Shipping Addresses',
+            _buildProfileTile(
+              icon: Icons.local_offer_outlined,
+              title: 'Notification Preferences',
+              subtitle: 'Email and Push enabled',
               onTap: () {},
             ),
-            _buildProfileTileRefactored(
-              title: 'Notification Settings',
+
+            const Divider(height: 1, thickness: 1),
+            
+            // App Information
+            _buildSectionHeader('App Information'),
+            _buildProfileTile(
+              icon: Icons.info_outline,
+              title: 'Terms of Service',
               onTap: () {},
             ),
-            _buildProfileTileRefactored(
-              title: 'Payment Methods',
+            _buildProfileTile(
+              icon: Icons.security,
+              title: 'Privacy Policy',
               onTap: () {},
+            ),
+
+            const Divider(height: 1, thickness: 1),
+
+            // Sign Out Button (The Target)
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text('Sign Out', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
+              onTap: () => _handleSignOut(context),
             ),
             
             const SizedBox(height: 20),
-
-            // Sign Out Button (Distinct style)
-            _buildProfileTileRefactored(
-              title: 'Sign Out',
-              color: Colors.red,
-              onTap: () {},
-            ),
-            
-            const SizedBox(height: 40),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16.0, top: 20, bottom: 8),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: retailPrimary,
+          ),
         ),
       ),
     );

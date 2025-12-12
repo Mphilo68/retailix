@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/constants.dart'; // Import constants
 import 'profile_screen.dart'; // Import Profile Screen
+import '../utils/auth_service.dart'; // Import the new service
 
 class PriceFinderScreen extends StatefulWidget {
   const PriceFinderScreen({super.key});
@@ -20,17 +21,12 @@ class _PriceFinderScreenState extends State<PriceFinderScreen> {
         context,
         MaterialPageRoute(builder: (context) => const ProfileScreen()),
       );
-      // We don't change _selectedIndex here, so the bottom bar stays on the original tab 
-      // or we can set it to a neutral tab if we prefer. For now, we leave it as is 
-      // since the profile screen is a separate full page.
       
     } else {
       // For all other tabs (Home, Scan, Lists), update the selected index
       setState(() {
         _selectedIndex = index;
       });
-      // Optionally, if the user taps 'Home' (index 0) while on a different tab,
-      // we can pop back to the root if needed, but for now we just change the index.
     }
   }
 
@@ -39,19 +35,39 @@ class _PriceFinderScreenState extends State<PriceFinderScreen> {
     Navigator.pop(context); // Close the drawer first
     if (routeName == '/') return; 
     
-    // Simple push replacement for non-home screens
+    // Check for the sign out action
+    if (routeName == '/logout') {
+      _handleSignOut(context);
+      return;
+    }
+
+    // Use named routing for screens now registered in RetailixApp
     if (routeName == '/profile' || routeName == '/settings' || routeName == '/help') {
       Navigator.of(context).pushNamed(routeName);
     } 
     // Add other screen navigations here
     else {
-      // Placeholder for other routes (Shopping List, Deals, Settings, etc.)
+      // Placeholder for other routes (Shopping List, Deals, etc.)
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Navigating to $routeName...'))
       );
     }
   }
 
+  // Dedicated sign-out handler
+  void _handleSignOut(BuildContext context) async {
+    // 1. Call the simulated sign out service
+    await AuthService().signOut();
+
+    // 2. Navigate back to the login screen, replacing all previous routes
+    if (context.mounted) {
+      // Use pushNamedAndRemoveUntil to clear the navigation stack
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You have been signed out.'))
+      );
+    }
+  }
   // --- WIDGETS FOR UI SECTIONS ---
 
   PreferredSizeWidget _buildCustomAppBar() {
